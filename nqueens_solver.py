@@ -127,18 +127,12 @@ class NQueensGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("N-Queens Solver Pro")
-        self.root.geometry("700x750")  
-        self.center_window(700, 750)
+        self.root.geometry("650x750")  
+        self.center_window(650, 750)
         self.solutions = []
         self.current_solution = -1
         self.solving_in_progress = False
         
-        self.themes = {
-            "Classic": {"light": "#f0d9b5", "dark": "#b58863", "queen": "#aa0000"},
-            "Cyber": {"light": "#2d2d4d", "dark": "#0d0d1a", "queen": "#00ff9d"},
-            "Nature": {"light": "#e0f2e1", "dark": "#a3b899", "queen": "#228B22"},
-            "Sunset": {"light": "#ffb3ba", "dark": "#ff6961", "queen": "#551a8b"}
-        }
         
         self.create_widgets()
         self.setup_scrollable_canvas()
@@ -160,13 +154,8 @@ class NQueensGUI:
         ])
         self.algo_combo.grid(row=0, column=3, padx=5)
         
-        ttk.Label(control_frame, text="Theme:").grid(row=0, column=4, padx=5)
-        self.theme_combo = ttk.Combobox(control_frame, values=list(self.themes.keys()))
-        self.theme_combo.current(0)
-        self.theme_combo.grid(row=0, column=5, padx=5)
-        
         self.solve_btn = ttk.Button(control_frame, text="Solve", command=self.start_solving)
-        self.solve_btn.grid(row=0, column=6, padx=5)
+        self.solve_btn.grid(row=0, column=4, padx=5)
         
         nav_frame = ttk.Frame(self.root)
         nav_frame.pack(pady=5)
@@ -289,7 +278,8 @@ class NQueensGUI:
     def draw_board(self, board):
         self.canvas.delete("all")
         n = len(board)
-        theme = self.themes[self.theme_combo.get()]
+        theme = {"light": "#2d2d4d", "dark": "#0d0d1a", "queen": "#00ff9d"} 
+
         
         self.canvas.update_idletasks() 
  
