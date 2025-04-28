@@ -15,14 +15,16 @@ def solve_n_queens_backtracking(n):
         for prev_row in range(row):
             if board[prev_row][col] == "Q":
                 return False
-        # Check top-left diagonal
+       
+        # Check negative diagonal
         i, j = row - 1, col - 1
         while i >= 0 and j >= 0:
             if board[i][j] == "Q":
                 return False
             i -= 1
             j -= 1
-        # Check top-right diagonal
+        
+        # Check positive diagonal
         i, j = row - 1, col + 1
         while i >= 0 and j < n:
             if board[i][j] == "Q":
@@ -58,7 +60,7 @@ def solve_n_queens_hill_climbing(n):
         return conflicts
 
     # Generate random board
-    board = [["."] * n for _ in range(n)]
+    board = [["."] * n for i in range(n)]
     for row in range(n):
         col = random.randint(0, n - 1)
         board[row][col] = "Q"
@@ -104,7 +106,7 @@ def solve_n_queens_best_first(n, gui=None):
             if queens[i][1] == queens[j][1] or abs(queens[i][1] - queens[j][1]) == abs(queens[i][0] - queens[j][0])
         )
 
-    board = [["."] * n for _ in range(n)]
+    board = [["."] * n for i in range(n)]
     heap = [(0, board)]
 
     while heap:
@@ -134,7 +136,7 @@ def solve_n_queens_genetic(n, population_size=100, generations=500):
 
 
     def random_board():
-        board = [["."] * n for _ in range(n)]
+        board = [["."] * n for i in range(n)]
         for r in range(n):
             board[r][random.randint(0, n-1)] = "Q"
         return board
@@ -144,7 +146,7 @@ def solve_n_queens_genetic(n, population_size=100, generations=500):
         return max_pairs - conflicts(board)
 
     def crossover(p1, p2):
-        child = [["."] * n for _ in range(n)]
+        child = [["."] * n for i in range(n)]
         for r in range(n):
             col = p1[r].index("Q") if random.random() < 0.5 else p2[r].index("Q")
             child[r][col] = "Q"
@@ -183,8 +185,8 @@ class NQueensGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("N-Queens Solver")
-        self.root.geometry("650x750")  
-        self.center_window(650, 750)
+        self.root.geometry("550x600")  
+        self.center_window(550, 600)
         self.solutions = []
         self.current_solution = -1
         self.solving_in_progress = False
