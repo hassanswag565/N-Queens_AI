@@ -125,12 +125,13 @@ def solve_n_queens_best_first(n, gui=None):
 def solve_n_queens_genetic(n, population_size=100, generations=500):
     def conflicts(board):
         queens = [(r, row.index("Q")) for r, row in enumerate(board)]
-        return sum(
-            1
-            for i in range(n)
-            for j in range(i+1, n)
-            if queens[i][1] == queens[j][1] or abs(queens[i][1] - queens[j][1]) == abs(queens[i][0] - queens[j][0])
-        )
+        conflict_count = 0
+        for i in range(len(queens)):
+            for j in range(i + 1, len(queens)):
+                if queens[i][1] == queens[j][1] or abs(queens[i][1] - queens[j][1]) == abs(queens[i][0] - queens[j][0]):
+                    conflict_count += 1
+        return conflict_count
+
 
     def random_board():
         board = [["."] * n for _ in range(n)]
