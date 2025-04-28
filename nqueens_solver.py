@@ -1,3 +1,4 @@
+import time
 import copy
 import heapq
 import random
@@ -95,93 +96,76 @@ def solve_n_queens_hill_climbing(n):
         return None
 
 # BEST-FIRST SEARCH
-def solve_n_queens_best_first(n):
-    def calculate_conflicts(board):
-        conflicts = 0
-        for r1 in range(n):
-            for r2 in range(r1 + 1, n):
-                c1 = board[r1].index("Q") if "Q" in board[r1] else -1
-                c2 = board[r2].index("Q") if "Q" in board[r2] else -1
-                if c1 != -1 and c2 != -1:
-                    if c1 == c2 or abs(c1 - c2) == abs(r1 - r2):
-                        conflicts += 1
-        return conflicts
+def solve_n_queens_best_first(n, gui=None):
+    def conflicts(board):
+        queens = [(r, row.index("Q")) for r, row in enumerate(board) if "Q" in row]
+        return sum(
+            1 for i in range(len(queens)) for j in range(i+1, len(queens))
+            if queens[i][1] == queens[j][1] or abs(queens[i][1] - queens[j][1]) == abs(queens[i][0] - queens[j][0])
+        )
 
-    initial_board = [["."] * n for _ in range(n)]
-    heap = []
-    heapq.heappush(heap, (0, initial_board))
+    board = [["."] * n for _ in range(n)]
+    heap = [(0, board)]
 
     while heap:
-        _, current = heapq.heappop(heap)
-
-        # Find first empty row
-        row = -1
-        for i in range(n):
-            if "Q" not in current[i]:
-                row = i
-                break
-
+        priority, current = heapq.heappop(heap)
+        if gui:
+            gui.log_message(f"Priority {priority}")
+        row = next((i for i in range(n) if "Q" not in current[i]), -1)
         if row == -1:
-            return current  # Solved
-
+            return current
         for col in range(n):
             new_board = copy.deepcopy(current)
             new_board[row][col] = "Q"
-            conflicts = calculate_conflicts(new_board)
-            heapq.heappush(heap, (conflicts, new_board))
+            heapq.heappush(heap, (conflicts(new_board), new_board))
 
     return None
 
 # GENETIC ALGORITHM
 def solve_n_queens_genetic(n, population_size=100, generations=500):
-    def calculate_conflicts(board):
-        conflicts = 0
-        for r1 in range(n):
-            for r2 in range(r1 + 1, n):
-                c1 = board[r1].index("Q")
-                c2 = board[r2].index("Q")
-                if c1 == c2 or abs(c1 - c2) == abs(r1 - r2):
-                    conflicts += 1
-        return conflicts
+    def conflicts(board):
+        queens = [(r, row.index("Q")) for r, row in enumerate(board)]
+        return sum(
+            1
+            for i in range(n)
+            for j in range(i+1, n)
+            if queens[i][1] == queens[j][1] or abs(queens[i][1] - queens[j][1]) == abs(queens[i][0] - queens[j][0])
+        )
 
-    def generate_random_board():
+    def random_board():
         board = [["."] * n for _ in range(n)]
-        for row in range(n):
-            col = random.randint(0, n - 1)
-            board[row][col] = "Q"
+        for r in range(n):
+            board[r][random.randint(0, n-1)] = "Q"
         return board
 
     def fitness(board):
-        max_pairs = (n * (n - 1)) // 2
-        return max_pairs - calculate_conflicts(board)
+        max_pairs = (n * (n-1)) // 2
+        return max_pairs - conflicts(board)
 
-    def crossover(parent1, parent2):
+    def crossover(p1, p2):
         child = [["."] * n for _ in range(n)]
-        for row in range(n):
-            source = parent1 if random.random() < 0.5 else parent2
-            col = source[row].index("Q")
-            child[row][col] = "Q"
+        for r in range(n):
+            col = p1[r].index("Q") if random.random() < 0.5 else p2[r].index("Q")
+            child[r][col] = "Q"
         return child
 
     def mutate(board):
-        row = random.randint(0, n - 1)
-        old_col = board[row].index("Q")
-        board[row][old_col] = "."
-        new_col = random.randint(0, n - 1)
-        board[row][new_col] = "Q"
+        r = random.randint(0, n-1)
+        board[r] = ["."] * n
+        board[r][random.randint(0, n-1)] = "Q"
 
-    population = [generate_random_board() for _ in range(population_size)]
+    population = [random_board() for _ in range(population_size)]
 
     for _ in range(generations):
-        population = sorted(population, key=lambda x: -fitness(x))
-        if calculate_conflicts(population[0]) == 0:
+        population.sort(key=lambda b: -fitness(b))
+        if conflicts(population[0]) == 0:
             return population[0]
 
         next_gen = population[:10]
         while len(next_gen) < population_size:
-            parent1 = random.choice(population[:50])
-            parent2 = random.choice(population[:50])
-            child = crossover(parent1, parent2)
+            p1 = random.choice(population[:50])
+            p2 = random.choice(population[:50])
+            child = crossover(p1, p2)
             if random.random() < 0.3:
                 mutate(child)
             next_gen.append(child)
@@ -240,8 +224,8 @@ class NQueensGUI:
         self.solution_counter = ttk.Label(nav_frame, text="Solution 0/0")
         self.solution_counter.pack(side=tk.LEFT, padx=10)
 
-        self.status = ttk.Label(self.root, relief=tk.SUNKEN, anchor=tk.W)
-        self.status.pack(side=tk.BOTTOM, fill=tk.X)
+        self.status = ttk.Label(self.root, relief=tk.SUNKEN, anchor=tk.W, padding=(5, 5), font=("Segoe UI", 10))
+        self.status.pack(side=tk.BOTTOM, fill=tk.X, ipady=7)
 
     def setup_scrollable_canvas(self):
         container = ttk.Frame(self.root)
@@ -287,6 +271,9 @@ class NQueensGUI:
 
     def solve_thread(self, n, algorithm):
         try:
+            import time
+            start_time = time.time()
+
             solutions = []
             if algorithm == "Backtracking Search":
                 solutions = solve_n_queens_backtracking(n)
@@ -299,8 +286,12 @@ class NQueensGUI:
             elif algorithm == "Genetic Algorithm":
                 result = solve_n_queens_genetic(n)
                 solutions = [result] if result and self.check_solution(result) else []
-            
+
             valid_solutions = [s for s in solutions if s is not None and self.check_solution(s)]
+
+            end_time = time.time()
+            self.solve_time = end_time - start_time  
+
             self.root.after(0, self.show_solutions, valid_solutions)
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
@@ -319,7 +310,7 @@ class NQueensGUI:
             self.prev_btn.config(state=nav_state)
             self.next_btn.config(state=nav_state)
             self.solution_counter.config(text=f"Solution 1/{len(solutions)}")
-            self.update_status(f"Found {len(solutions)} valid solutions")
+            self.update_status(f"Found {len(solutions)} valid solutions in {self.solve_time:.3f} seconds")
         else:
             self.canvas.delete("all")
             self.prev_btn.config(state=tk.DISABLED)
@@ -342,42 +333,31 @@ class NQueensGUI:
         n = len(board)
         theme = {"light": "#2d2d4d", "dark": "#0d0d1a", "queen": "#00ff9d"} 
 
-        self.canvas.update_idletasks() 
- 
-        # Get canvas dimensions
+        self.canvas.update_idletasks()
+
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
-        cell_size = (min(canvas_width, canvas_height-40)) // n
 
-        # Calculate center offsets
-        x_offset = (canvas_width - (cell_size * n)) // 2
-        y_offset = (canvas_height - (cell_size * n)) // 2
+        cell_size = min(canvas_width, canvas_height - 40) // n
 
-        # Ensure minimum padding
-        x_offset = max(20, x_offset)
-        y_offset = max(20, y_offset)
+        # Correct centering calculation
+        board_width = cell_size * n
+        board_height = cell_size * n
+        x_offset = (canvas_width - board_width) // 2
+        y_offset = (canvas_height - board_height) // 2
 
         for row in range(n):
             for col in range(n):
                 x1 = x_offset + col * cell_size
                 y1 = y_offset + row * cell_size
                 color = theme["light"] if (row + col) % 2 == 0 else theme["dark"]
-                self.canvas.create_rectangle(x1, y1, x1+cell_size, y1+cell_size, 
-                                           fill=color, outline="")
+                self.canvas.create_rectangle(x1, y1, x1+cell_size, y1+cell_size, fill=color, outline="")
                 if board[row][col] == "Q":
                     cx = x1 + cell_size // 2
                     cy = y1 + cell_size // 2
-                    self.canvas.create_text(cx, cy, text="♛", 
-                                          font=("Arial", cell_size//2), 
-                                          fill=theme["queen"])
-        
-        # Update scroll region and center view
-        self.canvas.configure(scrollregion=(
-            x_offset - 20, y_offset - 20,
-            x_offset + cell_size * n + 20,
-            y_offset + cell_size * n + 20
-        ))
-        self.center_board()
+                    self.canvas.create_text(cx, cy, text="♛", font=("Arial", cell_size//2), fill=theme["queen"])
+
+        self.canvas.configure(scrollregion=(0, 0, canvas_width, canvas_height))
 
     def center_board(self):
         self.canvas.xview_moveto(0.5)
