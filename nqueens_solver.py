@@ -206,8 +206,11 @@ class NQueensGUI:
         self.update_status("Ready")
 
     def create_widgets(self):
-        control_frame = ttk.Frame(self.root)
-        control_frame.pack(pady=10, fill=tk.X)
+        wrapper = ttk.Frame(self.root)
+        wrapper.pack(pady=10, fill=tk.X)
+
+        control_frame = ttk.Frame(wrapper)
+        control_frame.pack(anchor="center")
 
         ttk.Label(control_frame, text="Board Size:").grid(row=0, column=0, padx=5)
         self.n_entry = ttk.Entry(control_frame, width=5)
