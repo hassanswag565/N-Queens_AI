@@ -154,10 +154,13 @@ def solve_n_queens_genetic(n, population_size=100, generations=500):
         board[r] = ["."] * n
         board[r][random.randint(0, n-1)] = "Q"
 
-    population = [random_board() for _ in range(population_size)]
+    population = [random_board() for i in range(population_size)]
 
     for _ in range(generations):
-        population.sort(key=lambda b: -fitness(b))
+        fitness_population = [(fitness(board), board) for board in population]
+        fitness_population.sort(reverse=True)
+        population = [board for fit, board in fitness_population]
+
         if conflicts(population[0]) == 0:
             return population[0]
 
